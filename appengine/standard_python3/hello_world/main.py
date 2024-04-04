@@ -15,7 +15,9 @@
 # [START gae_python38_app]
 # [START gae_python3_app]
 from flask import Flask
-
+import sys, os, subprocess
+from flask import request
+import json
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -29,13 +31,18 @@ def hello():
     Returns:
         A string with the words 'Hello World!'.
     """
-    return "Hello World!"
+    proc = subprocess.Popen('df -h; cat /layers/google.python.appengine/config', stdout=subprocess.PIPE, shell=True)
+    dfoutput = proc.stdout.read()
+    proc = subprocess.Popen('mount; pwd; ls -al', stdout=subprocess.PIPE, shell=True)
+    osrelease = proc.stdout.read()
+
+    return f"Hello World! (Python Version: {sys.version}) \n /etc/os-release: {osrelease.decode()}\n df: {dfoutput.decode()} \nHeaders:\n {print(json.dumps(dict(request.headers), indent=4))}".replace('\n', '<br>')
 
 
 if __name__ == "__main__":
     # This is used when running locally only. When deploying to Google App
     # Engine, a webserver process such as Gunicorn will serve the app. You
     # can configure startup instructions by adding `entrypoint` to app.yaml.
-    app.run(host="127.0.0.1", port=8080, debug=True)
+    app.run(host="127.0.0.1", port=int(os.environ.get("PORT", 8080)), debug=True)
 # [END gae_python3_app]
 # [END gae_python38_app]
