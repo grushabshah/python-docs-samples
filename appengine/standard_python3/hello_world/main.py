@@ -23,6 +23,33 @@ import json
 # called `app` in `main.py`.
 app = Flask(__name__)
 
+METADATA_NETWORK_INTERFACE_URL = (
+    "http://metadata/computeMetadata/v1/instance/network-interfaces/0/"
+    "access-configs/0/external-ip"
+)
+
+
+def get_external_ip():
+    """Gets the instance's external IP address from the Compute Engine metadata
+    server.
+
+    If the metadata server is unavailable, it assumes that the application is running locally.
+
+    Returns:
+        The instance's external IP address, or the string 'localhost' if the IP address
+        is not available.
+    """
+    try:
+        r = requests.get(
+            METADATA_NETWORK_INTERFACE_URL,
+            headers={"Metadata-Flavor": "Google"},
+            timeout=2,
+        )
+        return r.text
+    except requests.RequestException:
+        logging.info("Metadata server could not be reached, assuming local.")
+        return "localhost"
+
 
 @app.route("/")
 def hello():
@@ -33,10 +60,10 @@ def hello():
     """
     proc = subprocess.Popen('df -h; cat /layers/google.python.appengine/config', stdout=subprocess.PIPE, shell=True)
     dfoutput = proc.stdout.read()
-    proc = subprocess.Popen('mount; pwd; ls -al', stdout=subprocess.PIPE, shell=True)
+    proc = subprocess.Popen('mount; pwd; ls -al; echo "=== $(date) ==="', stdout=subprocess.PIPE, shell=True)
     osrelease = proc.stdout.read()
-
-    return f"Hello World! (Python Version: {sys.version}) \n /etc/os-release: {osrelease.decode()}\n df: {dfoutput.decode()} \nHeaders:\n {print(json.dumps(dict(request.headers), indent=4))}".replace('\n', '<br>')
+    # external_ip = get_external_ip()
+    return f"Hello World! (Python 3 Version: {sys.version}) \n ENV VARS: \n {os.environ} \n /etc/os-release: {osrelease.decode()}\n df: {dfoutput.decode()} \nHeaders:\n {print(json.dumps(dict(request.headers), indent=4))}".replace('\n', '<br>')
 
 
 if __name__ == "__main__":

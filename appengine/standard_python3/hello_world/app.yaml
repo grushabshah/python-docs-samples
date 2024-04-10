@@ -12,5 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: python312
-service: flask-headers
+# runtime: python312
+# service: flaskheaders-std
+runtime: python
+service: flaskheaders-flex
+env: flex
+# entrypoint: gunicorn -b :$PORT main:app
+entrypoint: gunicorn -c gunicorn.conf.py -b :$PORT main:app
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "3.12"
